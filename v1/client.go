@@ -166,11 +166,11 @@ func (c *MgClient) Dialogs(request DialogsRequest) (DialogsResponse, int, error)
 	return resp, status, err
 }
 
-func (c *MgClient) DialogAssign(request DialogAssignRequest) (DialogAssignResponse, int, error) {
+func (c *MgClient) DialogAssign(request DialogAssignRequest, id int) (DialogAssignResponse, int, error) {
 	var resp DialogAssignResponse
 	outgoing, _ := json.Marshal(&request)
 
-	data, status, err := c.PostRequest(fmt.Sprintf("/dialogs/%s/assign", request.ID), []byte(outgoing))
+	data, status, err := c.PatchRequest(fmt.Sprintf("/dialogs/%v/assign", id), []byte(outgoing))
 	if err != nil {
 		return resp, status, err
 	}
@@ -186,24 +186,18 @@ func (c *MgClient) DialogAssign(request DialogAssignRequest) (DialogAssignRespon
 	return resp, status, err
 }
 
-func (c *MgClient) DialogClose(request DialogCloseRequest) (DialogCloseResponse, int, error) {
-	var resp DialogCloseResponse
-	outgoing, _ := json.Marshal(&request)
-
-	data, status, err := c.PostRequest(fmt.Sprintf("/dialogs/%s/close", request.ID), []byte(outgoing))
+func (c *MgClient) DialogClose(id int) (int, error) {
+	var b []byte
+	_, status, err := c.DeleteRequest(fmt.Sprintf("/dialogs/%v/close", id), b)
 	if err != nil {
-		return resp, status, err
-	}
-
-	if err := json.Unmarshal(data, &resp); err != nil {
-		return resp, status, err
+		return status, err
 	}
 
 	if status > http.StatusCreated || status < http.StatusOK {
-		return resp, status, c.Error(data)
+		return status, err
 	}
 
-	return resp, status, err
+	return status, err
 }
 
 func (c *MgClient) Messages(request MessagesRequest) (MessagesResponse, int, error) {
@@ -251,7 +245,7 @@ func (c *MgClient) MessageEdit(request MessageEditRequest) (MessageResponse, int
 	var resp MessageResponse
 	outgoing, _ := json.Marshal(&request)
 
-	data, status, err := c.PatchRequest(fmt.Sprintf("/messages/%s", request.ID), []byte(outgoing))
+	data, status, err := c.PatchRequest(fmt.Sprintf("/messages/%v", request.ID), []byte(outgoing))
 	if err != nil {
 		return resp, status, err
 	}
@@ -267,52 +261,40 @@ func (c *MgClient) MessageEdit(request MessageEditRequest) (MessageResponse, int
 	return resp, status, err
 }
 
-func (c *MgClient) MessageDelete(request MessageDeleteRequest) (MessageResponse, int, error) {
-	var resp MessageResponse
+func (c *MgClient) MessageDelete(id int) (int, error) {
+	var b []byte
+
+	_, status, err := c.DeleteRequest(fmt.Sprintf("/messages/%v", id), b)
+	if err != nil {
+		return status, err
+	}
+
+	if status > http.StatusCreated || status < http.StatusOK {
+		return status, err
+	}
+
+	return status, err
+}
+
+func (c *MgClient) Info(request UpdateBotRequest) (int, error) {
 	outgoing, _ := json.Marshal(&request)
 
-	data, status, err := c.DeleteRequest(fmt.Sprintf("/messages/%s", request.ID), []byte(outgoing))
+	data, status, err := c.PatchRequest("/my/info", []byte(outgoing))
 	if err != nil {
-		return resp, status, err
+		return status, err
 	}
-
-	if err := json.Unmarshal(data, &resp); err != nil {
-		return resp, status, err
-	}
-
 	if status > http.StatusCreated || status < http.StatusOK {
-		return resp, status, c.Error(data)
+		return status, c.Error(data)
 	}
 
-	return resp, status, err
+	return status, err
 }
 
-func (c *MgClient) Info(request InfoRequest) (InfoResponse, int, error) {
-	var resp InfoResponse
-	outgoing, _ := json.Marshal(&request)
-
-	data, status, err := c.PatchRequest("/messages/info", []byte(outgoing))
-	if err != nil {
-		return resp, status, err
-	}
-
-	if err := json.Unmarshal(data, &resp); err != nil {
-		return resp, status, err
-	}
-
-	if status > http.StatusCreated || status < http.StatusOK {
-		return resp, status, c.Error(data)
-	}
-
-	return resp, status, err
-}
-
-func (c *MgClient) Commands(request CommandsRequest) (CommandsResponse, int, error) {
+func (c *MgClient) Commands() (CommandsResponse, int, error) {
 	var resp CommandsResponse
 	var b []byte
-	outgoing, _ := query.Values(request)
 
-	data, status, err := c.GetRequest(fmt.Sprintf("/my/commands?%s", outgoing.Encode()), b)
+	data, status, err := c.GetRequest("/my/commands", b)
 	if err != nil {
 		return resp, status, err
 	}
@@ -328,8 +310,8 @@ func (c *MgClient) Commands(request CommandsRequest) (CommandsResponse, int, err
 	return resp, status, err
 }
 
-func (c *MgClient) CommandEdit(request CommandEditRequest) (CommandEditResponse, int, error) {
-	var resp CommandEditResponse
+func (c *MgClient) CommandEdit(request CommandRequest) (CommandResponse, int, error) {
+	var resp CommandResponse
 	outgoing, _ := json.Marshal(&request)
 
 	data, status, err := c.PutRequest(fmt.Sprintf("/my/commands/%s", request.Name), []byte(outgoing))
@@ -348,24 +330,18 @@ func (c *MgClient) CommandEdit(request CommandEditRequest) (CommandEditResponse,
 	return resp, status, err
 }
 
-func (c *MgClient) CommandDelete(request CommandDeleteRequest) (CommandDeleteResponse, int, error) {
-	var resp CommandDeleteResponse
-	outgoing, _ := json.Marshal(&request)
-
-	data, status, err := c.DeleteRequest(fmt.Sprintf("/my/commands/%s", request.Name), []byte(outgoing))
+func (c *MgClient) CommandDelete(name string) (int, error) {
+	var b []byte
+	data, status, err := c.DeleteRequest(fmt.Sprintf("/my/commands/%s", name), b)
 	if err != nil {
-		return resp, status, err
-	}
-
-	if err := json.Unmarshal(data, &resp); err != nil {
-		return resp, status, err
+		return status, err
 	}
 
 	if status > http.StatusCreated || status < http.StatusOK {
-		return resp, status, c.Error(data)
+		return status, c.Error(data)
 	}
 
-	return resp, status, err
+	return status, err
 }
 
 func (c *MgClient) Error(info []byte) error {

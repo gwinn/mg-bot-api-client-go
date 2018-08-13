@@ -98,13 +98,6 @@ type MessageEditRequest struct {
 	Content string `json:"content"`
 }
 
-type CommandsRequest struct {
-	ID    string
-	Name  string
-	Since string
-	Until string
-}
-
 type BotsResponse struct {
 	Bots []BotListItem
 }
@@ -257,12 +250,12 @@ type Responsible struct {
 	AssignAt string `json:"assign_at"`
 }
 
-type DialogResponsibleRequest struct {
+type DialogAssignRequest struct {
 	ManagerID int64 `json:"manager_id"`
 	BotID     int64 `json:"bot_id"`
 }
 
-type AssignResponse struct {
+type DialogAssignResponse struct {
 	Responsible         Responsible  `json:"responsible"`
 	IsReAssign          bool         `json:"is_reassign"`
 	PreviousResponsible *Responsible `json:"previous_responsible,omitempty"`
@@ -272,4 +265,21 @@ type AssignResponse struct {
 type Sender struct {
 	ID   int64
 	Type string
+}
+
+type CommandRequest struct {
+	Name        string
+	Description string `json:"description" binding:"required,max=64"`
+}
+
+type CommandsResponse struct {
+	CommandsResponse []CommandResponse
+}
+
+type CommandResponse struct {
+	ID          uint64  `json:"id"`
+	Name        string  `json:"name"`
+	Description string  `json:"description"`
+	CreatedAt   string  `json:"created_at"`
+	UpdatedAt   *string `json:"updated_at,omitempty"`
 }
